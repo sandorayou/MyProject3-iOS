@@ -1,0 +1,56 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-unsigned-ipa:
+    name: Build My Project (3) unsigned IPA
+    runs-on: macos-15
+    steps:
+      - name: Checkout Xcode export
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks | grep -E 'iphoneos|iPhoneOS'
+          grep -q 'Vision.framework' Builds/iOS/Unity-iPhone.xcodeproj/project.pbxproj
+
+      - name: Build unsigned app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Builds/iOS/Unity-iPhone.xcodeproj \
+            -scheme Unity-iPhone \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            IPHONEOS_DEPLOYMENT_TARGET=14.0 \
+            CONFIGURATION_BUILD_DIR="$RUNNER_TEMP/App" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP_PATH=$(find "$RUNNER_TEMP/App" -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/Payload/"
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/Payload" "$RUNNER_TEMP/MyProject3-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyProject3-unsigned-ipa
+          path: ${{ runner.temp }}/MyProject3-unsigned.ipa
+          if-no-files-found: error
