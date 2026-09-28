@@ -425,7 +425,7 @@ static void CodexStartRearCameraOnMainThread(void) {
     }
     s_bodyPoseRequest = [VNDetectHumanBodyPoseRequest new];
     s_bodyPoseRequest.preferBackgroundProcessing = YES;
-    s_bodyPose3DRequest = [VNDetectHumanBodyPose3DRequest new];
+    s_bodyPose3DRequest = [[VNDetectHumanBodyPose3DRequest alloc] init];
     s_bodyPose3DRequest.preferBackgroundProcessing = YES;
     s_handPoseRequest = [VNDetectHumanHandPoseRequest new];
     s_handPoseRequest.maximumHandCount = 2;
