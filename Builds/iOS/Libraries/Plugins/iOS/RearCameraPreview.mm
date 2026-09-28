@@ -3,6 +3,9 @@
 #import <Vision/Vision.h>
 #import <ImageIO/ImageIO.h>
 #import <simd/simd.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #import "UnityInterface.h"
 
 static AVCaptureSession *s_rearCameraSession;
@@ -23,20 +26,17 @@ static NSString *const s_unityReceiverName = @"Main Camera";
 
 static void CodexPoseLog(NSString *message) {
     NSString *line = [NSString stringWithFormat:@"%@ %@\n", [NSDate date], message];
-    @try {
-        NSString *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-        NSString *path = [documents stringByAppendingPathComponent:@"native-pose-debug.log"];
-        @synchronized (s_unityReceiverName) {
-            if (![[NSFileManager defaultManager] fileExistsAtPath:path])
-                [[NSFileManager defaultManager] createFileAtPath:path contents:nil attributes:nil];
-            NSFileHandle *file = [NSFileHandle fileHandleForWritingAtPath:path];
-            [file seekToEndOfFile];
-            [file writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
-            [file synchronizeFile];
-            [file closeFile];
+    NSString *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *path = [documents stringByAppendingPathComponent:@"native-pose-debug.log"];
+    @synchronized (s_unityReceiverName) {
+        FILE *file = fopen(path.fileSystemRepresentation, "ab");
+        if (file != NULL) {
+            const char *utf8 = line.UTF8String;
+            fwrite(utf8, 1, strlen(utf8), file);
+            fflush(file);
+            fsync(fileno(file));
+            fclose(file);
         }
-    } @catch (NSException *exception) {
-        NSLog(@"[CodexRearPose] Log write failed: %@", exception.reason);
     }
     NSLog(@"[CodexRearPose] %@", message);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -107,7 +107,6 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
         CodexPoseLog([NSString stringWithFormat:@"camera frame=%llu depth=%@", s_cameraFrame,
                       depthData != nil ? @"yes" : @"no"]);
 
-    @try {
     VNImageRequestHandler *handler = [[VNImageRequestHandler alloc]
         initWithCMSampleBuffer:sampleBuffer
                    orientation:kCGImagePropertyOrientationRight
@@ -390,9 +389,6 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
     dispatch_async(dispatch_get_main_queue(), ^{
         UnitySendMessage(s_unityReceiverName.UTF8String, "OnNativePoseJson", json.UTF8String);
     });
-    } @catch (NSException *exception) {
-        CodexPoseLog([NSString stringWithFormat:@"native exception: %@ — %@", exception.name, exception.reason]);
-    }
 }
 @end
 
