@@ -47,7 +47,9 @@ static void CodexPoseLog(NSString *message) {
 // Vision sees the video rotated right into portrait coordinates. The LiDAR map
 // shares the unrotated video buffer's field of view, so undo that rotation.
 static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint) {
-    if (map == nil) return NAN;
+    if (map == nil || CVPixelBufferGetPixelFormatType(map) != kCVPixelFormatType_DepthFloat32) return NAN;
+    const uint8_t *base = (const uint8_t *)CVPixelBufferGetBaseAddress(map);
+    if (base == NULL || !isfinite(visionPoint.x) || !isfinite(visionPoint.y)) return NAN;
     size_t width = CVPixelBufferGetWidth(map);
     size_t height = CVPixelBufferGetHeight(map);
     CGFloat rawX = 1.0 - visionPoint.y;
@@ -57,7 +59,6 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
     float samples[9];
     int count = 0;
     if (cx >= 0 && cy >= 0 && cx < (NSInteger)width && cy < (NSInteger)height) {
-        const uint8_t *base = (const uint8_t *)CVPixelBufferGetBaseAddress(map);
         size_t stride = CVPixelBufferGetBytesPerRow(map);
         for (NSInteger dy = -1; dy <= 1; dy++) {
             for (NSInteger dx = -1; dx <= 1; dx++) {
@@ -191,19 +192,25 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
     NSMutableDictionary<NSString *, NSNumber *> *jointDepth = [NSMutableDictionary dictionary];
     if (body3D != nil) {
         for (NSString *name in depthJoints) {
-            simd_float4x4 transform;
-            if ([body3D getCameraRelativePosition:&transform forJointName:depthJoints[name] error:nil]) {
-                jointDepth[name] = @(fabsf(transform.columns[3].z));
-            }
+            // The camera-relative convenience method crashes in Vision on the
+            // reported iOS 26 device. Joint.position is root-relative and its
+            // depth differences are sufficient for the avatar's body pose.
+            VNHumanBodyRecognizedPoint3D *joint =
+                [body3D recognizedPointForJointName:depthJoints[name] error:nil];
+            if (joint == nil) continue;
+            float z = joint.position.columns[3].z;
+            if (isfinite(z)) jointDepth[name] = @(z);
         }
     }
+    if (firstHumanFrame) CodexPoseLog([NSString stringWithFormat:@"3D joints mapped=%lu", (unsigned long)jointDepth.count]);
     CGFloat centerDepth = (jointDepth[@"left_shoulder"] && jointDepth[@"right_shoulder"])
         ? (jointDepth[@"left_shoulder"].doubleValue + jointDepth[@"right_shoulder"].doubleValue) * 0.5 : 0;
 
     NSMutableArray *points = [NSMutableArray arrayWithCapacity:jointNames.count + 42];
     for (NSString *name in jointNames) {
         VNRecognizedPoint *point = [observation recognizedPointForJointName:jointNames[name] error:nil];
-        if (point == nil || point.confidence <= 0.01) continue;
+        if (point == nil || point.confidence <= 0.01 ||
+            !isfinite(point.location.x) || !isfinite(point.location.y)) continue;
         CGFloat imageY = 1.0 - point.location.y;
         [points addObject:@{
             @"name": name,
@@ -216,6 +223,7 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
             @"image_z": @(jointDepth[name] ? jointDepth[name].doubleValue - centerDepth : 0),
         }];
     }
+    if (firstHumanFrame) CodexPoseLog([NSString stringWithFormat:@"body points mapped=%lu", (unsigned long)points.count]);
 
     // Match each hand to the body wrists. This follows the Windows tracker's
     // spatial left/right assignment and avoids depending on model handedness labels.
@@ -251,7 +259,8 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
         NSMutableDictionary<NSString *, NSDictionary *> *handPoints = [NSMutableDictionary dictionary];
         for (NSString *joint in handJointNames) {
             VNRecognizedPoint *point = [hand recognizedPointForJointName:handJointNames[joint] error:nil];
-            if (point == nil || point.confidence <= 0.01) continue;
+            if (point == nil || point.confidence <= 0.01 ||
+                !isfinite(point.location.x) || !isfinite(point.location.y)) continue;
             handPoints[joint] = @{
                 @"x": @(point.location.x),
                 @"y": @(point.location.y),
@@ -322,6 +331,7 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
             }];
         }
     }
+    if (firstHumanFrame) CodexPoseLog([NSString stringWithFormat:@"hand points mapped=%lu", (unsigned long)points.count]);
 
     if (depthMap != nil) CVPixelBufferUnlockBaseAddress(depthMap, kCVPixelBufferLock_ReadOnly);
 
@@ -366,6 +376,7 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
             [faceShapes addObject:@{@"name": @"jawOpen", @"score": @(MAX(0, MIN(1, (ratio - 0.12) / 0.65)))}];
         }
     }
+    if (firstHumanFrame) CodexPoseLog([NSString stringWithFormat:@"face shapes mapped=%lu", (unsigned long)faceShapes.count]);
     int64_t timestampMs = (int64_t)(CMTimeGetSeconds(timestamp) * 1000.0);
     CVImageBufferRef image = CMSampleBufferGetImageBuffer(sampleBuffer);
     NSDictionary *packet = @{
@@ -379,7 +390,13 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
         @"head_rotation": headRotation ?: [NSNull null],
         @"points": points,
     };
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:packet options:0 error:nil];
+    NSError *jsonError = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:packet options:0 error:&jsonError];
+    if (jsonData == nil) {
+        CodexPoseLog([NSString stringWithFormat:@"pose JSON error: %@", jsonError.localizedDescription]);
+        return;
+    }
+    if (firstHumanFrame) CodexPoseLog([NSString stringWithFormat:@"pose JSON encoded bytes=%lu", (unsigned long)jsonData.length]);
     NSString *json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     if (json.length == 0) return;
     if (s_poseFrame == 1 || s_poseFrame % 120 == 0)
