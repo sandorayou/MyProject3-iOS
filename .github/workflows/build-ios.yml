@@ -33,7 +33,7 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            IPHONEOS_DEPLOYMENT_TARGET=14.0 \
+            IPHONEOS_DEPLOYMENT_TARGET=17.0 \
             CONFIGURATION_BUILD_DIR="$RUNNER_TEMP/App" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \

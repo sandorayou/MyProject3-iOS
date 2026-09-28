@@ -454,10 +454,6 @@ void RegisterAllStrippedInternalCalls()
 		void Register_UnityEngine_Camera_get_pixelRect_Injected();
 		Register_UnityEngine_Camera_get_pixelRect_Injected();
 
-		//System.Void UnityEngine.Camera::set_allowHDR(System.Boolean)
-		void Register_UnityEngine_Camera_set_allowHDR();
-		Register_UnityEngine_Camera_set_allowHDR();
-
 		//System.Void UnityEngine.Camera::set_backgroundColor_Injected(UnityEngine.Color&)
 		void Register_UnityEngine_Camera_set_backgroundColor_Injected();
 		Register_UnityEngine_Camera_set_backgroundColor_Injected();

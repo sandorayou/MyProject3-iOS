@@ -9202,14 +9202,6 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Camera_set_fieldOfView_m5AA9EED4D1603A1D
 	_il2cpp_icall_func = (Camera_set_fieldOfView_m5AA9EED4D1603A1DEDBF883D9C42814B2BDEB777_ftn)il2cpp_codegen_resolve_icall ("UnityEngine.Camera::set_fieldOfView(System.Single)");
 	_il2cpp_icall_func(__this, ___0_value);
 }
-IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void Camera_set_allowHDR_m44211153DAF6DF9A51142EC7760A53777C1F3315 (Camera_tA92CC927D7439999BC82DBEDC0AA45B470F9E184* __this, bool ___0_value, const RuntimeMethod* method) 
-{
-	typedef void (*Camera_set_allowHDR_m44211153DAF6DF9A51142EC7760A53777C1F3315_ftn) (Camera_tA92CC927D7439999BC82DBEDC0AA45B470F9E184*, bool);
-	static Camera_set_allowHDR_m44211153DAF6DF9A51142EC7760A53777C1F3315_ftn _il2cpp_icall_func;
-	if (!_il2cpp_icall_func)
-	_il2cpp_icall_func = (Camera_set_allowHDR_m44211153DAF6DF9A51142EC7760A53777C1F3315_ftn)il2cpp_codegen_resolve_icall ("UnityEngine.Camera::set_allowHDR(System.Boolean)");
-	_il2cpp_icall_func(__this, ___0_value);
-}
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR float Camera_get_depth_mDF67FFF8ED61750467DFC4C6D8F236850AD1BB1D (Camera_tA92CC927D7439999BC82DBEDC0AA45B470F9E184* __this, const RuntimeMethod* method) 
 {
 	typedef float (*Camera_get_depth_mDF67FFF8ED61750467DFC4C6D8F236850AD1BB1D_ftn) (Camera_tA92CC927D7439999BC82DBEDC0AA45B470F9E184*);

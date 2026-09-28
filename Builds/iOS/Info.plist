@@ -29,7 +29,7 @@
     <key>LSRequiresIPhoneOS</key>
     <true />
     <key>NSCameraUsageDescription</key>
-    <string>背面カメラで映像を表示するために使用します。</string>
+    <string>背面カメラで体と手の動きを認識し、アバターに反映するために使用します。</string>
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen-iPhone</string>
     <key>UILaunchStoryboardName~ipad</key>
