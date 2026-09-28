@@ -1234,10 +1234,6 @@ void RegisterAllStrippedInternalCalls()
 
 	//Start Registrations for type : UnityEngine.GUI
 
-		//System.Boolean UnityEngine.GUI::HasMouseControl(System.Int32)
-		void Register_UnityEngine_GUI_HasMouseControl();
-		Register_UnityEngine_GUI_HasMouseControl();
-
 		//System.Boolean UnityEngine.GUI::get_changed()
 		void Register_UnityEngine_GUI_get_changed();
 		Register_UnityEngine_GUI_get_changed();
@@ -1245,14 +1241,6 @@ void RegisterAllStrippedInternalCalls()
 		//System.Boolean UnityEngine.GUI::get_enabled()
 		void Register_UnityEngine_GUI_get_enabled();
 		Register_UnityEngine_GUI_get_enabled();
-
-		//System.Void UnityEngine.GUI::GrabMouseControl(System.Int32)
-		void Register_UnityEngine_GUI_GrabMouseControl();
-		Register_UnityEngine_GUI_GrabMouseControl();
-
-		//System.Void UnityEngine.GUI::ReleaseMouseControl()
-		void Register_UnityEngine_GUI_ReleaseMouseControl();
-		Register_UnityEngine_GUI_ReleaseMouseControl();
 
 		//System.Void UnityEngine.GUI::get_backgroundColor_Injected(UnityEngine.Color&)
 		void Register_UnityEngine_GUI_get_backgroundColor_Injected();
@@ -1354,10 +1342,6 @@ void RegisterAllStrippedInternalCalls()
 		void Register_UnityEngine_GUIStyle_GetStyleStatePtr();
 		Register_UnityEngine_GUIStyle_GetStyleStatePtr();
 
-		//System.IntPtr UnityEngine.GUIStyle::Internal_Copy(UnityEngine.GUIStyle,UnityEngine.GUIStyle)
-		void Register_UnityEngine_GUIStyle_Internal_Copy();
-		Register_UnityEngine_GUIStyle_Internal_Copy();
-
 		//System.IntPtr UnityEngine.GUIStyle::Internal_Create(UnityEngine.GUIStyle)
 		void Register_UnityEngine_GUIStyle_Internal_Create();
 		Register_UnityEngine_GUIStyle_Internal_Create();
@@ -1394,10 +1378,6 @@ void RegisterAllStrippedInternalCalls()
 		void Register_UnityEngine_GUIStyle_SetMouseTooltip_Injected();
 		Register_UnityEngine_GUIStyle_SetMouseTooltip_Injected();
 
-		//System.Void UnityEngine.GUIStyle::set_fontSize(System.Int32)
-		void Register_UnityEngine_GUIStyle_set_fontSize();
-		Register_UnityEngine_GUIStyle_set_fontSize();
-
 		//System.Void UnityEngine.GUIStyle::set_rawName(System.String)
 		void Register_UnityEngine_GUIStyle_set_rawName();
 		Register_UnityEngine_GUIStyle_set_rawName();
@@ -1405,10 +1385,6 @@ void RegisterAllStrippedInternalCalls()
 		//System.Void UnityEngine.GUIStyle::set_stretchHeight(System.Boolean)
 		void Register_UnityEngine_GUIStyle_set_stretchHeight();
 		Register_UnityEngine_GUIStyle_set_stretchHeight();
-
-		//System.Void UnityEngine.GUIStyle::set_wordWrap(System.Boolean)
-		void Register_UnityEngine_GUIStyle_set_wordWrap();
-		Register_UnityEngine_GUIStyle_set_wordWrap();
 
 	//End Registrations for type : UnityEngine.GUIStyle
 
