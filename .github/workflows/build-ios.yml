@@ -22,13 +22,27 @@ jobs:
         run: |
           xcodebuild -version
           xcodebuild -showsdks | grep -E 'iphoneos|iPhoneOS'
-          grep -q 'Vision.framework' Builds/iOS/Unity-iPhone.xcodeproj/project.pbxproj
+          test -f Builds/iOS/Data/Raw/pose_landmarker_lite.task
+          test -f Builds/iOS/Data/Raw/hand_landmarker.task
+          test -f Builds/iOS/Data/Raw/face_landmarker.task
 
       - name: Build unsigned app
         run: |
           set -euo pipefail
+          cat > Builds/iOS/Podfile <<'PODFILE'
+          platform :ios, '17.0'
+          use_frameworks! :linkage => :static
+
+          target 'UnityFramework' do
+            pod 'MediaPipeTasksVision'
+          end
+          PODFILE
+          if ! command -v pod >/dev/null 2>&1; then
+            brew install cocoapods
+          fi
+          (cd Builds/iOS && pod install --repo-update --silent)
           xcodebuild \
-            -project Builds/iOS/Unity-iPhone.xcodeproj \
+            -workspace Builds/iOS/Unity-iPhone.xcworkspace \
             -scheme Unity-iPhone \
             -configuration Release \
             -sdk iphoneos \
