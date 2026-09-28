@@ -15,9 +15,34 @@ static VNDetectHumanBodyPose3DRequest *s_bodyPose3DRequest;
 static VNDetectHumanHandPoseRequest *s_handPoseRequest;
 static VNDetectFaceLandmarksRequest *s_faceRequest;
 static uint64_t s_poseFrame;
+static uint64_t s_cameraFrame;
 static CMTime s_lastInferenceTime;
 static BOOL s_loggedDepthFrame;
+static BOOL s_loggedHumanFrame;
 static NSString *const s_unityReceiverName = @"Main Camera";
+
+static void CodexPoseLog(NSString *message) {
+    NSString *line = [NSString stringWithFormat:@"%@ %@\n", [NSDate date], message];
+    @try {
+        NSString *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+        NSString *path = [documents stringByAppendingPathComponent:@"native-pose-debug.log"];
+        @synchronized (s_unityReceiverName) {
+            if (![[NSFileManager defaultManager] fileExistsAtPath:path])
+                [[NSFileManager defaultManager] createFileAtPath:path contents:nil attributes:nil];
+            NSFileHandle *file = [NSFileHandle fileHandleForWritingAtPath:path];
+            [file seekToEndOfFile];
+            [file writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
+            [file synchronizeFile];
+            [file closeFile];
+        }
+    } @catch (NSException *exception) {
+        NSLog(@"[CodexRearPose] Log write failed: %@", exception.reason);
+    }
+    NSLog(@"[CodexRearPose] %@", message);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UnitySendMessage(s_unityReceiverName.UTF8String, "OnNativePoseLog", message.UTF8String);
+    });
+}
 
 // Vision sees the video rotated right into portrait coordinates. The LiDAR map
 // shares the unrotated video buffer's field of view, so undo that rotation.
@@ -75,19 +100,38 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
 
 - (void)processSampleBuffer:(CMSampleBufferRef)sampleBuffer depthData:(AVDepthData *)depthData {
     CMTime timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
-    if (CMTIME_IS_VALID(s_lastInferenceTime) && CMTimeGetSeconds(CMTimeSubtract(timestamp, s_lastInferenceTime)) < (1.0 / 15.0)) return;
+    if (CMTIME_IS_VALID(s_lastInferenceTime) && CMTimeGetSeconds(CMTimeSubtract(timestamp, s_lastInferenceTime)) < (1.0 / 10.0)) return;
     s_lastInferenceTime = timestamp;
+    s_cameraFrame++;
+    if (s_cameraFrame == 1 || s_cameraFrame % 120 == 0)
+        CodexPoseLog([NSString stringWithFormat:@"camera frame=%llu depth=%@", s_cameraFrame,
+                      depthData != nil ? @"yes" : @"no"]);
 
+    @try {
     VNImageRequestHandler *handler = [[VNImageRequestHandler alloc]
         initWithCMSampleBuffer:sampleBuffer
                    orientation:kCGImagePropertyOrientationRight
                        options:@{}];
     NSError *error = nil;
-    if (![handler performRequests:@[s_bodyPoseRequest, s_handPoseRequest] error:&error]) return;
-    // Optional requests must not suppress a valid 2D body frame when a face is occluded.
-    [handler performRequests:@[s_bodyPose3DRequest, s_faceRequest] error:nil];
+    if (!s_loggedHumanFrame && s_cameraFrame % 15 == 0)
+        CodexPoseLog([NSString stringWithFormat:@"begin body/hand request frame=%llu", s_cameraFrame]);
+    if (![handler performRequests:@[s_bodyPoseRequest, s_handPoseRequest] error:&error]) {
+        CodexPoseLog([NSString stringWithFormat:@"body/hand Vision error: %@", error.localizedDescription]);
+        return;
+    }
     VNHumanBodyPoseObservation *observation = s_bodyPoseRequest.results.firstObject;
     if (observation == nil) return;
+    BOOL firstHumanFrame = !s_loggedHumanFrame;
+    if (firstHumanFrame) {
+        CodexPoseLog(@"first human detected; starting 3D body request");
+        s_loggedHumanFrame = YES;
+    }
+    if (![handler performRequests:@[s_bodyPose3DRequest] error:&error])
+        CodexPoseLog([NSString stringWithFormat:@"3D body Vision error: %@", error.localizedDescription]);
+    if (firstHumanFrame) CodexPoseLog(@"3D body request completed; starting face request");
+    if (![handler performRequests:@[s_faceRequest] error:&error])
+        CodexPoseLog([NSString stringWithFormat:@"face Vision error: %@", error.localizedDescription]);
+    if (firstHumanFrame) CodexPoseLog(@"face request completed; converting landmarks");
     VNHumanBodyPose3DObservation *body3D = s_bodyPose3DRequest.results.firstObject;
     AVDepthData *metricDepth = depthData != nil
         ? [depthData depthDataByConvertingToDepthDataType:kCVPixelFormatType_DepthFloat32] : nil;
@@ -95,7 +139,7 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
     if (depthMap != nil && CVPixelBufferLockBaseAddress(depthMap, kCVPixelBufferLock_ReadOnly) != kCVReturnSuccess)
         depthMap = nil;
     if (depthMap != nil && !s_loggedDepthFrame) {
-        NSLog(@"[CodexRearPose] Synchronized LiDAR depth received");
+        CodexPoseLog(@"synchronized LiDAR depth received");
         s_loggedDepthFrame = YES;
     }
 
@@ -339,9 +383,16 @@ static CGFloat CodexDepthAtVisionPoint(CVPixelBufferRef map, CGPoint visionPoint
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:packet options:0 error:nil];
     NSString *json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     if (json.length == 0) return;
+    if (s_poseFrame == 1 || s_poseFrame % 120 == 0)
+        CodexPoseLog([NSString stringWithFormat:@"pose frame=%llu points=%lu hands=%lu body3D=%@ face=%@",
+                      s_poseFrame, (unsigned long)points.count, (unsigned long)detectedHands.count,
+                      body3D != nil ? @"yes" : @"no", face != nil ? @"yes" : @"no"]);
     dispatch_async(dispatch_get_main_queue(), ^{
         UnitySendMessage(s_unityReceiverName.UTF8String, "OnNativePoseJson", json.UTF8String);
     });
+    } @catch (NSException *exception) {
+        CodexPoseLog([NSString stringWithFormat:@"native exception: %@ — %@", exception.name, exception.reason]);
+    }
 }
 @end
 
@@ -386,7 +437,7 @@ static void CodexStartRearCameraOnMainThread(void) {
             CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
             if (size.width * 3 != size.height * 4 || size.width < 640 || size.width > 1920) continue;
             int pixels = size.width * size.height;
-            if (pixels > selectedPixels) { selected = format; selectedPixels = pixels; }
+            if (selected == nil || pixels < selectedPixels) { selected = format; selectedPixels = pixels; }
         }
         if (selected != nil && [device lockForConfiguration:&error]) {
             device.activeFormat = selected;
@@ -418,10 +469,10 @@ static void CodexStartRearCameraOnMainThread(void) {
         s_depthOutput = depthOutput;
         s_outputSynchronizer = [[AVCaptureDataOutputSynchronizer alloc] initWithDataOutputs:@[output, depthOutput]];
         [s_outputSynchronizer setDelegate:s_poseDelegate queue:s_captureQueue];
-        NSLog(@"[CodexRearPose] LiDAR video/depth synchronization enabled");
+        CodexPoseLog(@"LiDAR video/depth synchronization enabled");
     } else {
         [output setSampleBufferDelegate:s_poseDelegate queue:s_captureQueue];
-        NSLog(@"[CodexRearPose] LiDAR unavailable; using Vision wrist depth");
+        CodexPoseLog(@"LiDAR unavailable; using Vision wrist depth");
     }
     s_bodyPoseRequest = [VNDetectHumanBodyPoseRequest new];
     s_bodyPoseRequest.preferBackgroundProcessing = YES;
@@ -433,8 +484,10 @@ static void CodexStartRearCameraOnMainThread(void) {
     s_faceRequest = [VNDetectFaceLandmarksRequest new];
     s_faceRequest.preferBackgroundProcessing = YES;
     s_poseFrame = 0;
+    s_cameraFrame = 0;
     s_lastInferenceTime = kCMTimeInvalid;
     s_loggedDepthFrame = NO;
+    s_loggedHumanFrame = NO;
 
     s_videoOutput = output;
     s_rearCameraSession = session;
