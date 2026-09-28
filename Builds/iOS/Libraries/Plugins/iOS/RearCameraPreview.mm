@@ -54,9 +54,9 @@ static NSDictionary *HeadRotation(MPPTransformMatrix *matrix) {
                 + r[0][2]*(r[1][0]*r[2][1]-r[1][1]*r[2][0]);
         if (fabsf(d) < 0.000001f) return nil;
         float t[3][3] = {
-            {{(r[1][1]*r[2][2]-r[1][2]*r[2][1])/d, (r[1][2]*r[2][0]-r[1][0]*r[2][2])/d, (r[1][0]*r[2][1]-r[1][1]*r[2][0])/d}},
-            {{(r[0][2]*r[2][1]-r[0][1]*r[2][2])/d, (r[0][0]*r[2][2]-r[0][2]*r[2][0])/d, (r[0][1]*r[2][0]-r[0][0]*r[2][1])/d}},
-            {{(r[0][1]*r[1][2]-r[0][2]*r[1][1])/d, (r[0][2]*r[2][1]-r[0][1]*r[2][0])/d, (r[0][0]*r[1][1]-r[0][1]*r[1][0])/d}}
+            {(r[1][1]*r[2][2]-r[1][2]*r[2][1])/d, (r[1][2]*r[2][0]-r[1][0]*r[2][2])/d, (r[1][0]*r[2][1]-r[1][1]*r[2][0])/d},
+            {(r[0][2]*r[2][1]-r[0][1]*r[2][2])/d, (r[0][0]*r[2][2]-r[0][2]*r[2][0])/d, (r[0][1]*r[2][0]-r[0][0]*r[2][1])/d},
+            {(r[0][1]*r[1][2]-r[0][2]*r[1][1])/d, (r[0][2]*r[2][1]-r[0][1]*r[2][0])/d, (r[0][0]*r[1][1]-r[0][1]*r[1][0])/d}
         };
         for (NSUInteger i = 0; i < 3; ++i)
             for (NSUInteger j = 0; j < 3; ++j)
@@ -86,7 +86,7 @@ static NSDictionary *HeadRotation(MPPTransformMatrix *matrix) {
 }
 
 static NSNumber *Number(float value) { return @(isfinite(value) ? value : 0.0f); }
-static NSDictionary *Point(NSString *name, MPPLandmark *world, MPPNormalizedLandmark *image,
+static NSDictionary *PosePointJSON(NSString *name, MPPLandmark *world, MPPNormalizedLandmark *image,
                            float confidence, float width, float height, float scale, float left, float top) {
     float ix = (image.x*256.0f-left)/(scale*width);
     float iy = (image.y*256.0f-top)/(scale*height);
@@ -161,7 +161,7 @@ static NSDictionary *Point(NSString *name, MPPLandmark *world, MPPNormalizedLand
         NSUInteger index = poseIndices[i].unsignedIntegerValue;
         if (index >= poseImage.count || index >= poseWorld.count) continue;
         MPPNormalizedLandmark *p = poseImage[index];
-        [points addObject:Point(poseNames[i], poseWorld[index], p, p.visibility.floatValue,
+        [points addObject:PosePointJSON(poseNames[i], poseWorld[index], p, p.visibility.floatValue,
                                 width, height, scale, left, top)];
     }
     // Associate detected hands with pose wrists; maintain one result per side.
@@ -185,7 +185,7 @@ static NSDictionary *Point(NSString *name, MPPLandmark *world, MPPNormalizedLand
         [assigned addObject:side];
         float score=category ? category.score : .5f;
         for (NSUInteger i=0; i<21; ++i)
-            [points addObject:Point([NSString stringWithFormat:@"%@_hand_%@",side,handNames[i]],
+            [points addObject:PosePointJSON([NSString stringWithFormat:@"%@_hand_%@",side,handNames[i]],
                                     handWorld[i],handImage[i],score,width,height,scale,left,top)];
         float wx=0,wy=0,wz=0,ix=0,iy=0,iz=0;
         for (NSNumber *n in @[@5,@9,@17]) {
