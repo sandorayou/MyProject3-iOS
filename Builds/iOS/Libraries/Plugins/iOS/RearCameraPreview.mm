@@ -1,6 +1,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <CoreImage/CoreImage.h>
 #import <MediaPipeTasksVision/MediaPipeTasksVision.h>
+#import <UIKit/UIKit.h>
 #import "UnityInterface.h"
 #include <math.h>
 #include <stdio.h>
@@ -101,6 +102,13 @@ static NSDictionary *PosePointJSON(NSString *name, MPPLandmark *world, MPPNormal
 - (void)captureOutput:(AVCaptureOutput *)output didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
     if (!s_pose || !s_hands || !s_face) return;
+    UIInterfaceOrientation ui = UIApplication.sharedApplication.statusBarOrientation;
+    AVCaptureVideoOrientation videoOrientation = AVCaptureVideoOrientationPortrait;
+    if (ui == UIInterfaceOrientationLandscapeLeft) videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+    else if (ui == UIInterfaceOrientationLandscapeRight) videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+    else if (ui == UIInterfaceOrientationPortraitUpsideDown) videoOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+    if (connection.isVideoOrientationSupported && connection.videoOrientation != videoOrientation)
+        connection.videoOrientation = videoOrientation;
     CVPixelBufferRef camera = CMSampleBufferGetImageBuffer(sampleBuffer);
     if (!camera) return;
     CMTime time = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
@@ -264,7 +272,12 @@ static void StartAuthorized(void) {
     [s_output setSampleBufferDelegate:s_delegate queue:s_queue];
     if ([s_session canAddOutput:s_output]) [s_session addOutput:s_output];
     AVCaptureConnection *connection=[s_output connectionWithMediaType:AVMediaTypeVideo];
-    if (connection.isVideoOrientationSupported) connection.videoOrientation=AVCaptureVideoOrientationPortrait;
+    UIInterfaceOrientation ui = UIApplication.sharedApplication.statusBarOrientation;
+    AVCaptureVideoOrientation videoOrientation = AVCaptureVideoOrientationPortrait;
+    if (ui == UIInterfaceOrientationLandscapeLeft) videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+    else if (ui == UIInterfaceOrientationLandscapeRight) videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+    else if (ui == UIInterfaceOrientationPortraitUpsideDown) videoOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+    if (connection.isVideoOrientationSupported) connection.videoOrientation=videoOrientation;
     if (connection.isVideoMirroringSupported) {
         connection.automaticallyAdjustsVideoMirroring=NO; connection.videoMirrored=NO;
     }
