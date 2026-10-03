@@ -48,6 +48,7 @@ extern void BoneRotationSolver_TryClampHand_m7556CD663CE45E8E3BFF5AA48601E9D226B
 extern void BoneRotationSolver__ctor_m60414D56D06A5DD62D0A68A183EA5A56889D40FE (void);
 extern void HumanoidPoseDriver_Awake_m0BEE32C3BE081F53EAA897DD86272F09434B9613 (void);
 extern void HumanoidPoseDriver_Start_mA5C4629BC1652A5430BBF7D427F41359EDC28E17 (void);
+extern void HumanoidPoseDriver_FrameAvatarAtIOSStartup_m27E5BC9D20C5029570DADD434C547DCE362F4462 (void);
 extern void HumanoidPoseDriver_ConfigureAnimeInternalLines_m219B813202956DD9DE562811938E9CC2A66AFBBF (void);
 extern void HumanoidPoseDriver_LateUpdate_m87AB2C582919FC83B662BD792DCF528F19422D73 (void);
 extern void HumanoidPoseDriver_ApplyPose_m6A51F6BB38FED8FAB21D7ACD43D9953868F96286 (void);
@@ -277,7 +278,7 @@ extern void UdpPoseReceiver__ctor_m1F2D23067A9F60010B917A828CEB1D94E826B4FB (voi
 extern void ArmSolveDiagnostics__ctor_mCDCAA7EC4A6CA111BB31DD3712960A3B7EF593A3 (void);
 extern void ArmSolveDiagnostics_ToString_m9282CCB076C5EDADB03ED1C6726E3CE1030DB1C8 (void);
 extern void UpperBodyPoseSolver_SolveArm_m0DB0A818FAD1756035743CC2CD6D763143763647 (void);
-static Il2CppMethodPointer s_methodPointers[265] = 
+static Il2CppMethodPointer s_methodPointers[266] = 
 {
 	UnitySourceGeneratedAssemblyMonoScriptTypes_v1_Get_mBEB95BEB954BB63E9710BBC7AD5E78C4CB0A0033,
 	UnitySourceGeneratedAssemblyMonoScriptTypes_v1__ctor_mE70FB23ACC1EA12ABC948AA22C2E78B2D0AA39B1,
@@ -315,6 +316,7 @@ static Il2CppMethodPointer s_methodPointers[265] =
 	BoneRotationSolver__ctor_m60414D56D06A5DD62D0A68A183EA5A56889D40FE,
 	HumanoidPoseDriver_Awake_m0BEE32C3BE081F53EAA897DD86272F09434B9613,
 	HumanoidPoseDriver_Start_mA5C4629BC1652A5430BBF7D427F41359EDC28E17,
+	HumanoidPoseDriver_FrameAvatarAtIOSStartup_m27E5BC9D20C5029570DADD434C547DCE362F4462,
 	HumanoidPoseDriver_ConfigureAnimeInternalLines_m219B813202956DD9DE562811938E9CC2A66AFBBF,
 	HumanoidPoseDriver_LateUpdate_m87AB2C582919FC83B662BD792DCF528F19422D73,
 	HumanoidPoseDriver_ApplyPose_m6A51F6BB38FED8FAB21D7ACD43D9953868F96286,
@@ -552,13 +554,13 @@ extern void ArmSolveDiagnostics__ctor_mCDCAA7EC4A6CA111BB31DD3712960A3B7EF593A3_
 extern void ArmSolveDiagnostics_ToString_m9282CCB076C5EDADB03ED1C6726E3CE1030DB1C8_AdjustorThunk (void);
 static Il2CppTokenAdjustorThunkPair s_adjustorThunks[5] = 
 {
-	{ 0x060000C3, UpperBodyPose__ctor_m4B68636ADB64F60E3BC5D9FF20F77D01518C527D_AdjustorThunk },
-	{ 0x060000C4, ArmPose__ctor_mF4C095189B46DB208D0A2EA3B8D579395F40D8DE_AdjustorThunk },
-	{ 0x060000C5, ScreenBodyPose__ctor_m65711CA6C90A006057AD60D6E87370F57EE22A55_AdjustorThunk },
-	{ 0x06000107, ArmSolveDiagnostics__ctor_mCDCAA7EC4A6CA111BB31DD3712960A3B7EF593A3_AdjustorThunk },
-	{ 0x06000108, ArmSolveDiagnostics_ToString_m9282CCB076C5EDADB03ED1C6726E3CE1030DB1C8_AdjustorThunk },
+	{ 0x060000C4, UpperBodyPose__ctor_m4B68636ADB64F60E3BC5D9FF20F77D01518C527D_AdjustorThunk },
+	{ 0x060000C5, ArmPose__ctor_mF4C095189B46DB208D0A2EA3B8D579395F40D8DE_AdjustorThunk },
+	{ 0x060000C6, ScreenBodyPose__ctor_m65711CA6C90A006057AD60D6E87370F57EE22A55_AdjustorThunk },
+	{ 0x06000108, ArmSolveDiagnostics__ctor_mCDCAA7EC4A6CA111BB31DD3712960A3B7EF593A3_AdjustorThunk },
+	{ 0x06000109, ArmSolveDiagnostics_ToString_m9282CCB076C5EDADB03ED1C6726E3CE1030DB1C8_AdjustorThunk },
 };
-static const int32_t s_InvokerIndices[265] = 
+static const int32_t s_InvokerIndices[266] = 
 {
 	8981,
 	6276,
@@ -593,6 +595,7 @@ static const int32_t s_InvokerIndices[265] =
 	1588,
 	468,
 	467,
+	6276,
 	6276,
 	6276,
 	6276,
@@ -830,7 +833,7 @@ IL2CPP_EXTERN_C const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule;
 const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule = 
 {
 	"Assembly-CSharp.dll",
-	265,
+	266,
 	s_methodPointers,
 	5,
 	s_adjustorThunks,
