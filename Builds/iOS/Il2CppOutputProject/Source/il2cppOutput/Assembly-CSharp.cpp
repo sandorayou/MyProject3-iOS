@@ -21277,7 +21277,6 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void HumanoidPoseDriver__ctor_mE22950296680E2
 		__this->___enableBodyTurn = (bool)1;
 		__this->___bodyTurnSpeed = (360.0f);
 		__this->___bodyTurnDeadZone = (2.0f);
-		__this->___avatarFacingOffsetDegrees = (180.0f);
 		__this->___bodyTurnMinConfidence = (0.600000024f);
 		__this->___bodyCollisionRadiusScale = (1.0f);
 		__this->___wristMinConfidence = (0.5f);
