@@ -257,7 +257,7 @@ static void StartAuthorized(void) {
     s_face=[[MPPFaceLandmarker alloc] initWithOptions:fo error:&error];
     if (!s_face) { PoseLog([NSString stringWithFormat:@"face init: %@",error]); s_pose=nil; s_hands=nil; return; }
     AVCaptureDevice *camera=[AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera
-                                                                  mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+                                                                  mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
     AVCaptureDeviceInput *input=[AVCaptureDeviceInput deviceInputWithDevice:camera error:&error];
     if (!input) { PoseLog([NSString stringWithFormat:@"camera input: %@",error]); return; }
     s_session=[AVCaptureSession new]; [s_session beginConfiguration];
@@ -284,7 +284,7 @@ static void StartAuthorized(void) {
     [s_session commitConfiguration];
     s_frame=0; s_lastTimestamp=0; s_loggedHuman=NO;
     [s_session startRunning];
-    PoseLog(@"MediaPipe Pose/Hand/Face camera started");
+    PoseLog(@"MediaPipe Pose/Hand/Face front camera started");
 }
 
 extern "C" void CodexRearCameraStart(void) {

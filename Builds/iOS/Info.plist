@@ -31,7 +31,7 @@
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true />
     <key>NSCameraUsageDescription</key>
-    <string>背面カメラで体と手の動きを認識し、アバターに反映するために使用します。</string>
+    <string>前面カメラで体と手の動きを認識し、アバターに反映するために使用します。</string>
     <key>UIFileSharingEnabled</key>
     <true />
     <key>UILaunchStoryboardName</key>
